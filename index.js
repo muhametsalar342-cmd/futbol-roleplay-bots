@@ -13,17 +13,14 @@ const {
 // AYARLAR
 // ==========================================
 
-const TOKEN = process.env.TOKEN;
-
-// BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ KOY
+// DEĞER YETKİLİSİ ROL ID
 const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
 
 // Antrenman verileri
 const antrenman = new Map();
 
-
 // ==========================================
-// CLIENT
+// DISCORD CLIENT
 // ==========================================
 
 const client = new Client({
@@ -34,17 +31,15 @@ const client = new Client({
     ]
 });
 
-
 // ==========================================
-// BOT AÇILDI
+// BOT HAZIR
 // ==========================================
 
 client.once("ready", () => {
-    console.log("--------------------------------");
-    console.log(`BOT AKTIF: ${client.user.tag}`);
-    console.log("--------------------------------");
+    console.log("================================");
+    console.log(`BOT AKTİF: ${client.user.tag}`);
+    console.log("================================");
 });
-
 
 // ==========================================
 // DEĞERİ SAYIYA ÇEVİR
@@ -57,7 +52,7 @@ function parseValue(text) {
     let value = text
         .toLowerCase()
         .replace(/€/g, "")
-        .replace(/ /g, "")
+        .replace(/\s/g, "")
         .replace(",", ".");
 
     let multiplier = 1;
@@ -67,12 +62,12 @@ function parseValue(text) {
         value = value.slice(0, -1);
     }
 
-    if (value.endsWith("m")) {
+    else if (value.endsWith("m")) {
         multiplier = 1000000;
         value = value.slice(0, -1);
     }
 
-    if (value.endsWith("b")) {
+    else if (value.endsWith("b")) {
         multiplier = 1000000000;
         value = value.slice(0, -1);
     }
@@ -86,9 +81,8 @@ function parseValue(text) {
     return number * multiplier;
 }
 
-
 // ==========================================
-// DEĞERİ FORMATLA
+// DEĞERİ YAZIYA ÇEVİR
 // ==========================================
 
 function formatValue(value) {
@@ -114,7 +108,6 @@ function formatValue(value) {
     return `${value}€`;
 }
 
-
 // ==========================================
 // TAKMA ADDAKİ DEĞERİ BUL
 // ==========================================
@@ -133,7 +126,6 @@ function getNicknameValue(nickname) {
         match[1] + match[2]
     );
 }
-
 
 // ==========================================
 // TAKMA ADDAKİ DEĞERİ DEĞİŞTİR
@@ -157,9 +149,8 @@ function changeNicknameValue(
     );
 }
 
-
 // ==========================================
-// MESAJLAR
+// MESAJ KOMUTLARI
 // ==========================================
 
 client.on("messageCreate", async (message) => {
@@ -183,58 +174,46 @@ client.on("messageCreate", async (message) => {
         const args =
             parts.slice(1);
 
-
-        // ==========================================
+        // ======================================
         // .DVER
-        // ==========================================
+        // SADECE DEĞER YETKİLİSİ
+        // ======================================
 
         if (command === ".dver") {
 
-            // Rol ID ayarlanmış mı?
             if (
                 DEGER_YETKILISI_ROL_ID ===
                 "BURAYA_ROL_ID"
             ) {
-
                 return message.reply(
                     "❌ Kodda Değer Yetkilisi rol ID'sini ayarla."
                 );
             }
 
-            // Sadece Değer Yetkilisi
             if (
                 !message.member.roles.cache.has(
                     DEGER_YETKILISI_ROL_ID
                 )
             ) {
-
                 return message.reply(
                     "❌ Bu komutu sadece **Değer Yetkilisi** kullanabilir."
                 );
             }
 
-            // Etiket
             const oyuncu =
                 message.mentions.members.first();
 
             if (!oyuncu) {
-
                 return message.reply(
-                    "❌ Kullanım:\n" +
-                    "`.dver @oyuncu 5M`"
+                    "❌ Kullanım:\n`.dver @oyuncu 5M`"
                 );
             }
 
-            // Miktar
-            const miktar =
-                args[1];
+            const miktar = args[1];
 
             if (!miktar) {
-
                 return message.reply(
-                    "❌ Değer miktarı eksik.\n\n" +
-                    "Örnek:\n" +
-                    "`.dver @oyuncu 5M`"
+                    "❌ Değer miktarı yazmalısın.\nÖrnek: `.dver @oyuncu 5M`"
                 );
             }
 
@@ -242,26 +221,21 @@ client.on("messageCreate", async (message) => {
                 parseValue(miktar);
 
             if (eklenecek <= 0) {
-
                 return message.reply(
-                    "❌ Geçerli bir değer gir.\n\n" +
-                    "Örnek: `5M`, `500K`, `1.5M`"
+                    "❌ Geçerli bir değer gir."
                 );
             }
 
-            // Oyuncunun takma adı
             const eskiTakmaAd =
                 oyuncu.nickname ||
                 oyuncu.user.username;
 
-            // Eski değer
             const eskiDeger =
                 getNicknameValue(
                     eskiTakmaAd
                 );
 
             if (eskiDeger === null) {
-
                 return message.reply(
                     "❌ Oyuncunun takma adında değer bulunamadı.\n\n" +
                     "Örnek:\n" +
@@ -269,23 +243,14 @@ client.on("messageCreate", async (message) => {
                 );
             }
 
-            // Toplama
             const yeniDeger =
                 eskiDeger + eklenecek;
 
-            // Yeni takma ad
             const yeniTakmaAd =
                 changeNicknameValue(
                     eskiTakmaAd,
                     yeniDeger
                 );
-
-            if (!yeniTakmaAd) {
-
-                return message.reply(
-                    "❌ Yeni takma ad oluşturulamadı."
-                );
-            }
 
             try {
 
@@ -296,29 +261,25 @@ client.on("messageCreate", async (message) => {
                 return message.reply(
                     `✅ **Değer Verildi**\n\n` +
                     `👤 Oyuncu: ${oyuncu}\n` +
-                    `💰 Eski değer: **${formatValue(eskiDeger)}**\n` +
+                    `💰 Eski: **${formatValue(eskiDeger)}**\n` +
                     `➕ Eklenen: **${formatValue(eklenecek)}**\n` +
-                    `📈 Yeni değer: **${formatValue(yeniDeger)}**`
+                    `📈 Yeni: **${formatValue(yeniDeger)}**`
                 );
 
             } catch (error) {
 
-                console.error(
-                    "DVER HATASI:",
-                    error
-                );
+                console.error(error);
 
                 return message.reply(
-                    "❌ Takma ad değiştirilemedi.\n" +
-                    "Botun rolünün oyuncunun rolünden yukarıda olduğundan emin ol."
+                    "❌ Takma ad değiştirilemedi. Botun rol sırasını kontrol et."
                 );
             }
         }
 
-
-        // ==========================================
-        // ANTRENMAN
-        // ==========================================
+        // ======================================
+        // .ANT / .ANTRENMAN
+        // HERKES
+        // ======================================
 
         if (
             command === ".ant" ||
@@ -333,13 +294,9 @@ client.on("messageCreate", async (message) => {
 
             sayi++;
 
-            // 10/10
             if (sayi >= 10) {
 
-                antrenman.set(
-                    id,
-                    0
-                );
+                antrenman.set(id, 0);
 
                 const nickname =
                     message.member.nickname ||
@@ -351,7 +308,6 @@ client.on("messageCreate", async (message) => {
                     );
 
                 if (eskiDeger === null) {
-
                     return message.reply(
                         "🏋️ **10/10 ANTRENMAN!**\n\n" +
                         "❌ Takma adında € değeri bulunamadı.\n" +
@@ -359,7 +315,6 @@ client.on("messageCreate", async (message) => {
                     );
                 }
 
-                // +3M
                 const yeniDeger =
                     eskiDeger + 3000000;
 
@@ -386,10 +341,7 @@ client.on("messageCreate", async (message) => {
 
                 } catch (error) {
 
-                    console.error(
-                        "ANTRENMAN HATASI:",
-                        error
-                    );
+                    console.error(error);
 
                     return message.reply(
                         "❌ Takma ad değiştirilemedi."
@@ -409,10 +361,10 @@ client.on("messageCreate", async (message) => {
             );
         }
 
-
-        // ==========================================
-        // PENALTI
-        // ==========================================
+        // ======================================
+        // .PEN / .PENALTI
+        // HERKES
+        // ======================================
 
         if (
             command === ".pen" ||
@@ -432,7 +384,6 @@ client.on("messageCreate", async (message) => {
                     `🧤 Kaleci kurtardı!\n\n` +
                     `❌ **PENALTI KAÇTI!**`
                 );
-
             }
 
             return message.reply(
@@ -443,26 +394,22 @@ client.on("messageCreate", async (message) => {
             );
         }
 
-
-        // ==========================================
-        // TWEET
-        // HERKES KULLANABİLİR
-        // ==========================================
+        // ======================================
+        // .TWEET
+        // HERKES
+        // ======================================
 
         if (command === ".tweet") {
 
             const tweetText =
-                args.join(" ");
+                args.join(" ").trim();
 
             if (!tweetText) {
-
                 return message.reply(
-                    "❌ Kullanım:\n" +
-                    "`.tweet Tweet mesajı`"
+                    "❌ Kullanım:\n`.tweet Tweet mesajı`"
                 );
             }
 
-            // Görsel boyutu
             const width = 1200;
             const height = 675;
 
@@ -475,9 +422,8 @@ client.on("messageCreate", async (message) => {
             const ctx =
                 canvas.getContext("2d");
 
-            // Beyaz arka plan
-            ctx.fillStyle =
-                "#ffffff";
+            // ARKA PLAN
+            ctx.fillStyle = "#ffffff";
 
             ctx.fillRect(
                 0,
@@ -486,23 +432,18 @@ client.on("messageCreate", async (message) => {
                 height
             );
 
-            // Kenarlık
-            ctx.strokeStyle =
-                "#dddddd";
-
-            ctx.lineWidth = 4;
+            // ÇERÇEVE
+            ctx.strokeStyle = "#dddddd";
+            ctx.lineWidth = 3;
 
             ctx.strokeRect(
-                10,
-                10,
-                width - 20,
-                height - 20
+                15,
+                15,
+                width - 30,
+                height - 30
             );
 
-            // ======================================
             // AVATAR
-            // ======================================
-
             try {
 
                 const avatarURL =
@@ -543,38 +484,24 @@ client.on("messageCreate", async (message) => {
                 ctx.restore();
 
             } catch (error) {
-
                 console.log(
-                    "Avatar alınamadı."
+                    "Avatar yüklenemedi."
                 );
             }
 
-            // ======================================
             // İSİM
-            // ======================================
-
-            ctx.fillStyle =
-                "#111111";
-
-            ctx.font =
-                "bold 36px Arial";
+            ctx.fillStyle = "#111111";
+            ctx.font = "bold 36px Arial";
 
             ctx.fillText(
-                message.member.displayName ||
-                message.author.username,
+                message.member.displayName,
                 185,
                 95
             );
 
-            // ======================================
             // USERNAME
-            // ======================================
-
-            ctx.fillStyle =
-                "#666666";
-
-            ctx.font =
-                "25px Arial";
+            ctx.fillStyle = "#777777";
+            ctx.font = "24px Arial";
 
             ctx.fillText(
                 `@${message.author.username}`,
@@ -582,45 +509,34 @@ client.on("messageCreate", async (message) => {
                 130
             );
 
-            // ======================================
-            // TWEET METNİ
-            // ======================================
-
-            ctx.fillStyle =
-                "#111111";
-
-            ctx.font =
-                "32px Arial";
+            // TWEET MESAJI
+            ctx.fillStyle = "#111111";
+            ctx.font = "34px Arial";
 
             const maxWidth = 1000;
-
-            const words =
-                tweetText.split(" ");
+            const lineHeight = 50;
 
             let line = "";
-
             let y = 220;
 
-            for (
-                let i = 0;
-                i < words.length;
-                i++
-            ) {
+            const words =
+                tweetText.split(/\s+/);
 
-                const test =
-                    line +
-                    words[i] +
-                    " ";
+            for (const word of words) {
 
-                const size =
+                const testLine =
+                    line.length === 0
+                        ? word
+                        : line + " " + word;
+
+                const textWidth =
                     ctx.measureText(
-                        test
-                    );
+                        testLine
+                    ).width;
 
                 if (
-                    size.width >
-                        maxWidth &&
-                    line !== ""
+                    textWidth > maxWidth &&
+                    line.length > 0
                 ) {
 
                     ctx.fillText(
@@ -629,19 +545,16 @@ client.on("messageCreate", async (message) => {
                         y
                     );
 
-                    line =
-                        words[i] + " ";
-
-                    y += 52;
+                    line = word;
+                    y += lineHeight;
 
                 } else {
 
-                    line =
-                        test;
+                    line = testLine;
                 }
             }
 
-            if (line !== "") {
+            if (line.length > 0) {
 
                 ctx.fillText(
                     line,
@@ -650,92 +563,39 @@ client.on("messageCreate", async (message) => {
                 );
             }
 
-            // ======================================
             // TARİH
-            // ======================================
-
-            ctx.fillStyle =
-                "#777777";
-
-            ctx.font =
-                "22px Arial";
-
-            const tarih =
-                new Date().toLocaleString(
-                    "tr-TR"
-                );
+            ctx.fillStyle = "#777777";
+            ctx.font = "22px Arial";
 
             ctx.fillText(
-                tarih,
+                new Date().toLocaleString("tr-TR"),
                 90,
                 560
             );
 
-            // ======================================
-            // AYRAÇ
-            // ======================================
-
-            ctx.strokeStyle =
-                "#dddddd";
-
+            // ALT ÇİZGİ
+            ctx.strokeStyle = "#dddddd";
             ctx.lineWidth = 2;
 
             ctx.beginPath();
 
-            ctx.moveTo(
-                70,
-                585
-            );
-
-            ctx.lineTo(
-                1130,
-                585
-            );
+            ctx.moveTo(70, 585);
+            ctx.lineTo(1130, 585);
 
             ctx.stroke();
 
-            // ======================================
             // ETKİLEŞİMLER
-            // ======================================
+            ctx.fillStyle = "#555555";
+            ctx.font = "24px Arial";
 
-            ctx.fillStyle =
-                "#555555";
+            ctx.fillText("↩ 0", 100, 630);
+            ctx.fillText("↻ 0", 350, 630);
+            ctx.fillText("♡ 0", 600, 630);
+            ctx.fillText("↗️ 0", 850, 630);
 
-            ctx.font =
-                "24px Arial";
-
-            ctx.fillText(
-                "↩  0",
-                100,
-                630
-            );
-
-            ctx.fillText(
-                "↻  0",
-                350,
-                630
-            );
-
-            ctx.fillText(
-                "♡  0",
-                600,
-                630
-            );
-
-            ctx.fillText(
-                "↗️  0",
-                850,
-                630
-            );
-
-            // ======================================
             // PNG
-            // ======================================
-
             const buffer =
-                canvas.toBuffer(
-                    "image/png"
-                );
+                canvas.toBuffer("image/png");
 
             const dosya =
                 new AttachmentBuilder(
@@ -749,7 +609,7 @@ client.on("messageCreate", async (message) => {
                 files: [dosya]
             });
 
-            // Komutu sil
+            // KOMUTU SİL
             try {
                 await message.delete();
             } catch {}
@@ -765,33 +625,45 @@ client.on("messageCreate", async (message) => {
         );
 
         try {
-
             await message.reply(
                 "❌ Komut çalışırken bir hata oluştu."
             );
-
         } catch {}
     }
 });
 
-
 // ==========================================
 // TOKEN
+// RAINWAY ENVIRONMENT VARIABLE
 // ==========================================
+
+const TOKEN = process.env.TOKEN;
 
 if (!TOKEN) {
 
     console.error(
-        "❌ TOKEN bulunamadı! Rainway Environment Variables kısmına TOKEN ekle."
+        "❌ TOKEN bulunamadı!"
     );
 
-} else {
+    console.error(
+        "Rainway'de TOKEN adlı Environment Variable oluştur."
+    );
 
-    client.login(TOKEN)
-        .catch((error) => {
-            console.error(
-                "❌ DISCORD LOGIN HATASI:",
-                error
-            );
-        });
+    process.exit(1);
 }
+
+client.login(TOKEN)
+    .then(() => {
+        console.log(
+            "✅ Discord'a giriş yapıldı."
+        );
+    })
+    .catch((error) => {
+
+        console.error(
+            "❌ Discord giriş hatası:",
+            error
+        );
+
+        process.exit(1);
+    });
