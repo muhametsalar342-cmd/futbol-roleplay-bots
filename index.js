@@ -19,7 +19,7 @@ const client = new Client({
 const PREFIX = ".";
 
 // BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ YAZ
-const DEGER_YETKILI_ROL_ID = "ROL_ID_BURAYA";
+const DEGER_YETKILI_ROL_ID = "1540002147243139133";
 
 // Antrenman 10/10 olunca
 const ANTRENMAN_ODULU = 1000000;
