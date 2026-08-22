@@ -4,14 +4,16 @@ const {
     AttachmentBuilder
 } = require("discord.js");
 
+const sharp = require("sharp");
+
 // ==========================================
 // AYARLAR
 // ==========================================
 
-// DEĞER YETKİLİSİ ROL ID
+// BURAYA DEĞER YETKİLİSİ ROL ID
 const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
 
-// Antrenman sayıları
+// Antrenman verileri
 const antrenman = new Map();
 
 // ==========================================
@@ -31,13 +33,13 @@ const client = new Client({
 // ==========================================
 
 client.once("ready", () => {
-    console.log("================================");
-    console.log(`BOT AKTİF: ${client.user.tag}`);
-    console.log("================================");
+    console.log("--------------------------------");
+    console.log(`✅ Bot aktif: ${client.user.tag}`);
+    console.log("--------------------------------");
 });
 
 // ==========================================
-// DEĞER PARSE
+// DEĞERİ SAYIYA ÇEVİR
 // ==========================================
 
 function parseValue(text) {
@@ -77,7 +79,7 @@ function parseValue(text) {
 }
 
 // ==========================================
-// DEĞER FORMAT
+// DEĞERİ YAZIYA ÇEVİR
 // ==========================================
 
 function formatValue(value) {
@@ -159,7 +161,7 @@ function escapeXML(text) {
 }
 
 // ==========================================
-// TWEET SATIRLARI
+// TWEET MESAJINI SATIRLARA AYIR
 // ==========================================
 
 function createTweetLines(text) {
@@ -236,7 +238,7 @@ client.on("messageCreate", async (message) => {
             ) {
 
                 return message.reply(
-                    "❌ Önce kodda Değer Yetkilisi rol ID'sini ayarla."
+                    "❌ Kodda Değer Yetkilisi rol ID'sini ayarla."
                 );
             }
 
@@ -277,7 +279,7 @@ client.on("messageCreate", async (message) => {
             if (eklenecek <= 0) {
 
                 return message.reply(
-                    "❌ Geçerli bir değer gir.\nÖrnek: `5M`, `500K`, `1.5M`"
+                    "❌ Geçerli bir değer gir."
                 );
             }
 
@@ -299,7 +301,7 @@ client.on("messageCreate", async (message) => {
                 );
             }
 
-            // ÖNCEKİ DEĞER + YENİ DEĞER
+            // Eski değerin üzerine ekle
             const yeniDeger =
                 eskiDeger + eklenecek;
 
@@ -308,13 +310,6 @@ client.on("messageCreate", async (message) => {
                     eskiTakmaAd,
                     yeniDeger
                 );
-
-            if (!yeniTakmaAd) {
-
-                return message.reply(
-                    "❌ Takma ad değiştirilemedi."
-                );
-            }
 
             try {
 
@@ -338,7 +333,7 @@ client.on("messageCreate", async (message) => {
                 );
 
                 return message.reply(
-                    "❌ Takma ad değiştirilemedi. Botun rolünün oyuncunun rolünden yukarıda olduğundan emin ol."
+                    "❌ Takma ad değiştirilemedi. Botun rol sırasını kontrol et."
                 );
             }
         }
@@ -383,7 +378,7 @@ client.on("messageCreate", async (message) => {
                     return message.reply(
                         "🏋️ **ANTRENMAN 10/10!**\n\n" +
                         "❌ Takma adında € değeri bulunamadı.\n" +
-                        "🔄 Yeni antrenman: **0/10**"
+                        "🔄 Yeni seri: **0/10**"
                     );
                 }
 
@@ -500,8 +495,8 @@ client.on("messageCreate", async (message) => {
                     messageSVG += `
 <text
     x="80"
-    y="${230 + index * 50}"
-    font-family="Arial, sans-serif"
+    y="${225 + index * 50}"
+    font-family="Arial"
     font-size="34"
     font-weight="500"
     fill="#111111"
@@ -530,7 +525,7 @@ client.on("messageCreate", async (message) => {
                     .toUpperCase()
                 );
 
-            const tarih =
+            const date =
                 escapeXML(
                     new Date().toLocaleString(
                         "tr-TR"
@@ -546,7 +541,6 @@ client.on("messageCreate", async (message) => {
     xmlns="http://www.w3.org/2000/svg"
     width="1200"
     height="675"
-    viewBox="0 0 1200 675"
 >
 
 <rect
@@ -608,7 +602,7 @@ ${messageSVG}
     font-family="Arial"
     font-size="22"
     fill="#777777"
->${tarih}</text>
+>${date}</text>
 
 <line
     x1="70"
@@ -625,7 +619,7 @@ ${messageSVG}
     font-family="Arial"
     font-size="24"
     fill="#555555"
->↩ 0</text>
+>Reply 0</text>
 
 <text
     x="350"
@@ -633,52 +627,64 @@ ${messageSVG}
     font-family="Arial"
     font-size="24"
     fill="#555555"
->↻ 0</text>
+>Repost 0</text>
 
 <text
-    x="600"
+    x="650"
     y="630"
     font-family="Arial"
     font-size="24"
     fill="#555555"
->♡ 0</text>
+>Like 0</text>
 
-<text
-    x="850"
-    y="630"
-    font-family="Arial"
-    font-size="24"
-    fill="#555555"
->↗️ 0</text>
-
-</svg>`;
-
-            const buffer =
-                Buffer.from(
-                    svg,
-                    "utf8"
-                );
-
-            const dosya =
-                new AttachmentBuilder(
-                    buffer,
-                    {
-                        name: "tweet.svg"
-                    }
-                );
-
-            await message.channel.send({
-                files: [dosya]
-            });
+</svg>
+`;
 
             try {
-                await message.delete();
-            } catch {}
+
+                // SVG → PNG
+                const png =
+                    await sharp(
+                        Buffer.from(svg)
+                    )
+                    .png()
+                    .toBuffer();
+
+                const dosya =
+                    new AttachmentBuilder(
+                        png,
+                        {
+                            name: "tweet.png"
+                        }
+                    );
+
+                // PNG'Yİ GÖNDER
+                await message.channel.send({
+                    files: [dosya]
+                });
+
+                // Komut mesajını sil
+                try {
+                    await message.delete();
+                } catch {}
+
+            } catch (error) {
+
+                console.error(
+                    "TWEET HATASI:",
+                    error
+                );
+
+                await message.reply(
+                    "❌ Tweet görseli oluşturulamadı."
+                );
+            }
 
             return;
         }
+    }
 
-    } catch (error) {
+    catch (error) {
 
         console.error(
             "GENEL HATA:",
@@ -697,7 +703,7 @@ ${messageSVG}
 
 // ==========================================
 // TOKEN
-// RAINWAY'DEN ALIR
+// RAINWAY ENVIRONMENT VARIABLE
 // ==========================================
 
 const TOKEN =
