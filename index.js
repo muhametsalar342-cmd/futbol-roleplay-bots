@@ -16,7 +16,7 @@ const client = new Client({
 // =================================================
 
 // BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ YAZ
-const DEGER_YETKILISI_ROL_ID = "BURAYA_ROL_ID";
+const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
 
 // Tokeni Rainway Environment Variables kısmına koy
 const TOKEN = process.env.TOKEN;
