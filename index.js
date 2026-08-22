@@ -14,7 +14,7 @@ const {
 // ==========================================
 
 // Değer Yetkilisi rol ID'si
-const DEGER_YETKILISI_ROL_ID = "BURAYA_ROL_ID";
+const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
 
 // Antrenman verileri
 const antrenmanlar = new Map();
