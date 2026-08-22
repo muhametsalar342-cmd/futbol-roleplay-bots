@@ -21,7 +21,7 @@ const client = new Client({
 const TOKEN = process.env.TOKEN;
 
 // BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ YAZ
-const DEGER_YETKILISI_ROL_ID = "BURAYA_ROL_ID";
+const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
 
 // Antrenman verileri
 const antrenman = new Map();
