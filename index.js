@@ -6,493 +6,505 @@ const {
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMembers,
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent
     ]
 });
 
-// ==========================================
+// =================================================
 // AYARLAR
-// ==========================================
-
-const PREFIX = ".";
+// =================================================
 
 // BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ YAZ
-const DEGER_YETKILI_ROL_ID = "1540002147243139133";
+const DEGER_YETKILISI_ROL_ID = "BURAYA_ROL_ID";
 
-// Antrenman 10/10 olunca
-const ANTRENMAN_ODULU = 1000000;
+// Tokeni Rainway Environment Variables kısmına koy
+const TOKEN = process.env.TOKEN;
 
-// Penaltı gol olunca
-const PENALTI_ODULU = 2000000;
 
-// ==========================================
+// =================================================
 // ANTRENMAN VERİLERİ
-// ==========================================
+// =================================================
 
-const antrenmanlar = new Map();
+const antrenman = new Map();
 
-// ==========================================
+
+// =================================================
 // BOT HAZIR
-// ==========================================
+// =================================================
 
 client.once("ready", () => {
-
     console.log(`${client.user.tag} aktif!`);
-
-    client.user.setPresence({
-        activities: [
-            {
-                name: "Legendary League | Futbol RP",
-                type: 3
-            }
-        ],
-        status: "online"
-    });
-
 });
 
-// ==========================================
-// MESAJ SİSTEMİ
-// ==========================================
+
+// =================================================
+// DEĞERİ SAYIYA ÇEVİR
+// =================================================
+
+function parseValue(text) {
+
+    if (!text) return 0;
+
+    text = text
+        .toLowerCase()
+        .replace("€", "")
+        .trim();
+
+    let multiplier = 1;
+
+    if (text.endsWith("k")) {
+
+        multiplier = 1000;
+        text = text.slice(0, -1);
+
+    } else if (text.endsWith("m")) {
+
+        multiplier = 1000000;
+        text = text.slice(0, -1);
+
+    } else if (text.endsWith("b")) {
+
+        multiplier = 1000000000;
+        text = text.slice(0, -1);
+    }
+
+    const number = parseFloat(
+        text.replace(",", ".")
+    );
+
+    if (isNaN(number)) return 0;
+
+    return number * multiplier;
+}
+
+
+// =================================================
+// SAYIYI € FORMATINA ÇEVİR
+// =================================================
+
+function formatValue(value) {
+
+    if (value >= 1000000000) {
+
+        const result = value / 1000000000;
+
+        return `${Number(result.toFixed(1))}B€`;
+    }
+
+    if (value >= 1000000) {
+
+        const result = value / 1000000;
+
+        return `${Number(result.toFixed(1))}M€`;
+    }
+
+    if (value >= 1000) {
+
+        const result = value / 1000;
+
+        return `${Number(result.toFixed(1))}K€`;
+    }
+
+    return `${value}€`;
+}
+
+
+// =================================================
+// TAKMA ADDAKİ DEĞERİ BUL
+// =================================================
+
+function getNicknameValue(nickname) {
+
+    const match = nickname.match(
+        /([\d.,]+)\s*([KMBkmb]?)€/
+    );
+
+    if (!match) return null;
+
+    return parseValue(
+        match[1] + match[2]
+    );
+}
+
+
+// =================================================
+// TAKMA ADDAKİ DEĞERİ DEĞİŞTİR
+// =================================================
+
+function changeNicknameValue(
+    nickname,
+    newValue
+) {
+
+    const regex =
+        /([\d.,]+)\s*([KMBkmb]?)€/;
+
+    if (!regex.test(nickname)) {
+        return null;
+    }
+
+    return nickname.replace(
+        regex,
+        formatValue(newValue)
+    );
+}
+
+
+// =================================================
+// MESAJ KOMUTLARI
+// =================================================
 
 client.on("messageCreate", async (message) => {
 
-    try {
+    if (message.author.bot) return;
 
-        if (message.author.bot) return;
-        if (!message.guild) return;
+    if (!message.guild) return;
 
-        if (!message.content.startsWith(PREFIX)) return;
 
-        const args = message.content
-            .slice(PREFIX.length)
-            .trim()
-            .split(/\s+/);
+    const args = message.content
+        .trim()
+        .split(/\s+/);
 
-        const command = args.shift().toLowerCase();
+    const command =
+        args[0].toLowerCase();
 
-        // ======================================
-        // .dver
-        // ======================================
 
-        if (command === "dver") {
+    // =================================================
+    // DEĞER VERME
+    // .dver @oyuncu 5M
+    // =================================================
 
-            if (
-                !message.member.roles.cache.has(
-                    DEGER_YETKILI_ROL_ID
-                )
-            ) {
-                return message.reply(
-                    "❌ Bu komutu kullanmak için **Değer Yetkilisi** rolüne sahip olmalısın."
-                );
-            }
+    if (command === ".dver") {
 
-            const oyuncu =
-                message.mentions.members.first();
 
-            if (!oyuncu) {
-                return message.reply(
-                    "❌ Kullanım: `.dver @oyuncu 5M`"
-                );
-            }
-
-            // Mention args[0], değer args[1]
-            const miktarYazisi = args[1];
-
-            if (!miktarYazisi) {
-                return message.reply(
-                    "❌ Değer miktarı yazmalısın.\n\n" +
-                    "Örnek: `.dver @oyuncu 5M`"
-                );
-            }
-
-            const verilenDeger =
-                parseDeger(miktarYazisi);
-
-            if (
-                isNaN(verilenDeger) ||
-                verilenDeger <= 0
-            ) {
-                return message.reply(
-                    "❌ Geçerli bir değer gir.\n\n" +
-                    "`500K` • `1M` • `5M` • `1.5M` • `2B`"
-                );
-            }
-
-            await degerEkle(
-                oyuncu,
-                verilenDeger,
-                message
-            );
-
-            return;
-        }
-
-        // ======================================
-        // .antrenman VE .ant
-        // ======================================
+        // ---------------------------------------------
+        // DEĞER YETKİLİSİ KONTROLÜ
+        // ---------------------------------------------
 
         if (
-            command === "antrenman" ||
-            command === "ant"
+            DEGER_YETKILISI_ROL_ID ===
+            "BURAYA_ROL_ID"
         ) {
 
-            const oyuncu =
-                message.mentions.members.first();
-
-            if (!oyuncu) {
-                return message.reply(
-                    "❌ Kullanım: `.ant @oyuncu`"
-                );
-            }
-
-            const id = oyuncu.id;
-
-            let seviye =
-                antrenmanlar.get(id) || 0;
-
-            seviye++;
-
-            // 10/10 tamamlandı
-            if (seviye >= 10) {
-
-                antrenmanlar.set(id, 0);
-
-                await degerEkle(
-                    oyuncu,
-                    ANTRENMAN_ODULU,
-                    message,
-                    false
-                );
-
-                return message.reply(
-                    `🏋️ **${oyuncu.user.username}** antrenmanı tamamladı!\n\n` +
-                    `🔥 Antrenman: **10/10**\n` +
-                    `🔄 Yeni Antrenman: **0/10**\n` +
-                    `💰 Ödül: **+1M€**`
-                );
-
-            }
-
-            antrenmanlar.set(id, seviye);
-
             return message.reply(
-                `🏋️ **${oyuncu.user.username}** antrenman yaptı!\n\n` +
-                `📈 Antrenman: **${seviye}/10**\n` +
-                `🎯 Sonraki ödül: **10/10**`
+                "❌ Önce kodda Değer Yetkilisi rol ID'sini ayarla."
             );
         }
 
-        // ======================================
-        // .penaltı VE .pen
-        // ======================================
 
         if (
-            command === "penaltı" ||
-            command === "penalti" ||
-            command === "pen"
+            !message.member.roles.cache.has(
+                DEGER_YETKILISI_ROL_ID
+            )
         ) {
 
-            const oyuncu =
-                message.mentions.members.first();
-
-            if (!oyuncu) {
-                return message.reply(
-                    "❌ Kullanım: `.pen @oyuncu`"
-                );
-            }
-
-            // Rastgele penaltı
-            const gol =
-                Math.random() < 0.5;
-
-            if (gol) {
-
-                await degerEkle(
-                    oyuncu,
-                    PENALTI_ODULU,
-                    message,
-                    false
-                );
-
-                return message.reply(
-                    `⚽ **PENALTI!**\n\n` +
-                    `🥅 **${oyuncu.user.username}** penaltıyı kullandı!\n\n` +
-                    `🟢 **GOOOOL!**\n` +
-                    `💰 Değer Ödülü: **+2M€**`
-                );
-
-            } else {
-
-                return message.reply(
-                    `⚽ **PENALTI!**\n\n` +
-                    `🥅 **${oyuncu.user.username}** penaltıyı kullandı!\n\n` +
-                    `🔴 **KAÇIRDI!**\n` +
-                    `💰 Değer değişmedi.`
-                );
-
-            }
-        }
-
-        // ======================================
-        // .deger
-        // ======================================
-
-        if (command === "deger") {
-
-            const oyuncu =
-                message.mentions.members.first();
-
-            if (!oyuncu) {
-                return message.reply(
-                    "❌ Kullanım: `.deger @oyuncu`"
-                );
-            }
-
-            const isim =
-                oyuncu.nickname ||
-                oyuncu.user.username;
-
-            const regex =
-                /(\d+(?:[.,]\d+)?)\s*(K|M|B)?\s*€?\s*$/i;
-
-            const eslesen =
-                isim.match(regex);
-
-            if (!eslesen) {
-                return message.reply(
-                    "❌ Bu oyuncunun takma adında değer bulunamadı."
-                );
-            }
-
             return message.reply(
-                `💎 **${oyuncu.user.username}** oyuncusunun değeri: **${eslesen[1]}${eslesen[2] || ""}€**`
+                "❌ Bu komutu sadece **Değer Yetkilisi** kullanabilir."
             );
         }
 
-    } catch (error) {
 
-        console.error("KOMUT HATASI:", error);
+        // ---------------------------------------------
+        // OYUNCU ETİKETİ
+        // ---------------------------------------------
+
+        const member =
+            message.mentions.members.first();
+
+
+        if (!member) {
+
+            return message.reply(
+                "❌ Kullanım:\n`.dver @oyuncu 5M`"
+            );
+        }
+
+
+        // ---------------------------------------------
+        // VERİLECEK DEĞER
+        // ---------------------------------------------
+
+        const miktar = args[2];
+
+
+        if (!miktar) {
+
+            return message.reply(
+                "❌ Bir değer miktarı yazmalısın.\n\n" +
+                "Örnek:\n" +
+                "`.dver @oyuncu 5M`"
+            );
+        }
+
+
+        const eklenecek =
+            parseValue(miktar);
+
+
+        if (eklenecek <= 0) {
+
+            return message.reply(
+                "❌ Geçerli bir değer gir.\n\n" +
+                "Örnekler:\n" +
+                "`5M`\n" +
+                "`500K`\n" +
+                "`1.5M`"
+            );
+        }
+
+
+        // ---------------------------------------------
+        // MEVCUT TAKMA AD
+        // ---------------------------------------------
+
+        const eskiTakmaAd =
+            member.nickname ||
+            member.user.username;
+
+
+        // ---------------------------------------------
+        // MEVCUT DEĞER
+        // ---------------------------------------------
+
+        const eskiDeger =
+            getNicknameValue(
+                eskiTakmaAd
+            );
+
+
+        if (eskiDeger === null) {
+
+            return message.reply(
+                "❌ Oyuncunun takma adında değer bulunamadı.\n\n" +
+                "Örnek:\n" +
+                "`W.Sneijder | 🇳🇬 | SNT | 1M€`"
+            );
+        }
+
+
+        // ---------------------------------------------
+        // ESKİ DEĞER + VERİLEN DEĞER
+        // ---------------------------------------------
+
+        const yeniDeger =
+            eskiDeger + eklenecek;
+
+
+        // ---------------------------------------------
+        // TAKMA ADI DEĞİŞTİR
+        // ---------------------------------------------
+
+        const yeniTakmaAd =
+            changeNicknameValue(
+                eskiTakmaAd,
+                yeniDeger
+            );
+
+
+        if (!yeniTakmaAd) {
+
+            return message.reply(
+                "❌ Takma ad değiştirilirken hata oluştu."
+            );
+        }
+
+
+        try {
+
+            await member.setNickname(
+                yeniTakmaAd
+            );
+
+
+            return message.reply(
+                `✅ ${member} oyuncusuna değer verildi!\n\n` +
+                `💰 Eski değer: **${formatValue(eskiDeger)}**\n` +
+                `➕ Verilen: **${formatValue(eklenecek)}**\n` +
+                `📈 Yeni değer: **${formatValue(yeniDeger)}**`
+            );
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            return message.reply(
+                "❌ Takma ad değiştirilemedi.\n\n" +
+                "Botun rolünün oyuncunun rolünden yukarıda olduğundan ve " +
+                "**Takma Adları Yönet** yetkisine sahip olduğundan emin ol."
+            );
+        }
+    }
+
+
+    // =================================================
+    // ANTRENMAN
+    // .ant
+    // .antrenman
+    // =================================================
+
+    if (
+        command === ".ant" ||
+        command === ".antrenman"
+    ) {
+
+
+        const userId =
+            message.author.id;
+
+
+        let count =
+            antrenman.get(userId) || 0;
+
+
+        count++;
+
+
+        // ---------------------------------------------
+        // 10/10 TAMAMLANDI
+        // ---------------------------------------------
+
+        if (count >= 10) {
+
+            // Yeni seri başlat
+            antrenman.set(
+                userId,
+                0
+            );
+
+
+            const member =
+                message.member;
+
+
+            const nickname =
+                member.nickname ||
+                member.user.username;
+
+
+            const eskiDeger =
+                getNicknameValue(
+                    nickname
+                );
+
+
+            if (eskiDeger === null) {
+
+                return message.reply(
+                    `🏋️ **ANTRENMAN TAMAMLANDI!**\n\n` +
+                    `📊 Antrenman: **10/10**\n` +
+                    `❌ Takma adında geçerli bir € değeri bulunamadı.\n\n` +
+                    `🔄 Yeni antrenman: **0/10**`
+                );
+            }
+
+
+            // ---------------------------------------------
+            // +3M€
+            // ---------------------------------------------
+
+            const yeniDeger =
+                eskiDeger + 3000000;
+
+
+            const yeniTakmaAd =
+                changeNicknameValue(
+                    nickname,
+                    yeniDeger
+                );
+
+
+            try {
+
+                await member.setNickname(
+                    yeniTakmaAd
+                );
+
+
+                return message.reply(
+                    `🏋️ **ANTRENMAN TAMAMLANDI!**\n\n` +
+                    `📊 Antrenman: **10/10**\n` +
+                    `💰 Değer artışı: **+3M€**\n` +
+                    `📊 Eski değer: **${formatValue(eskiDeger)}**\n` +
+                    `📈 Yeni değer: **${formatValue(yeniDeger)}**\n\n` +
+                    `🔄 Yeni antrenman serisi: **0/10**`
+                );
+
+
+            } catch (error) {
+
+                console.error(error);
+
+                return message.reply(
+                    "❌ Değer artırıldı fakat takma ad değiştirilemedi. " +
+                    "Botun rol sırasını kontrol et."
+                );
+            }
+        }
+
+
+        // ---------------------------------------------
+        // NORMAL ANTRENMAN
+        // ---------------------------------------------
+
+        antrenman.set(
+            userId,
+            count
+        );
+
 
         return message.reply(
-            "❌ İşlem sırasında bir hata oluştu."
-        ).catch(() => {});
+            `🏋️ **Antrenman yapıldı!**\n\n` +
+            `📊 Antrenman: **${count}/10**\n` +
+            `🎯 10/10 olduğunda mevcut değerine **+3M€** eklenecek.`
+        );
+    }
 
+
+    // =================================================
+    // PENALTI
+    // .pen
+    // .penaltı
+    // =================================================
+
+    if (
+        command === ".pen" ||
+        command === ".penaltı"
+    ) {
+
+
+        const sans =
+            Math.floor(
+                Math.random() * 100
+            ) + 1;
+
+
+        if (sans <= 50) {
+
+            return message.reply(
+                `⚽ **PENALTI**\n\n` +
+                `🎯 Vuruş yapıldı!\n` +
+                `🧤 Kaleci kurtardı!\n\n` +
+                `❌ **PENALTI KAÇTI!**`
+            );
+
+        } else {
+
+            return message.reply(
+                `⚽ **PENALTI**\n\n` +
+                `🎯 Vuruş yapıldı!\n` +
+                `🥅 Top ağlarda!\n\n` +
+                `✅ **GOOOOOL!**`
+            );
+        }
     }
 
 });
 
-// ==========================================
-// DEĞER EKLEME
-// ==========================================
 
-async function degerEkle(
-    oyuncu,
-    eklenecekDeger,
-    message,
-    cevapVer = true
-) {
-
-    const eskiIsim =
-        oyuncu.nickname ||
-        oyuncu.user.username;
-
-    const regex =
-        /(\d+(?:[.,]\d+)?)\s*(K|M|B)?\s*€?\s*$/i;
-
-    const eslesen =
-        eskiIsim.match(regex);
-
-    if (!eslesen) {
-
-        return message.reply(
-            "❌ Oyuncunun takma adının sonunda değer bulunamadı.\n\n" +
-            "Örnek:\n" +
-            "`W.Sneijder | 🇹🇷 | SNT | 1M€`"
-        );
-
-    }
-
-    const mevcutSayi =
-        parseFloat(
-            eslesen[1].replace(",", ".")
-        );
-
-    const mevcutBirim =
-        eslesen[2]
-            ? eslesen[2].toUpperCase()
-            : "";
-
-    const mevcutDeger =
-        birimeCevir(
-            mevcutSayi,
-            mevcutBirim
-        );
-
-    const yeniDeger =
-        mevcutDeger + eklenecekDeger;
-
-    const yeniDegerYazisi =
-        formatDeger(yeniDeger);
-
-    const yeniIsim =
-        eskiIsim.replace(
-            regex,
-            `${yeniDegerYazisi}€`
-        );
-
-    if (yeniIsim.length > 32) {
-
-        return message.reply(
-            "❌ Oyuncunun takma adı 32 karakter sınırını aşıyor."
-        );
-
-    }
-
-    try {
-
-        await oyuncu.setNickname(
-            yeniIsim
-        );
-
-        if (cevapVer) {
-
-            return message.reply(
-                `💰 **${oyuncu.user.username}**\n\n` +
-                `Eski Değer: **${formatDeger(mevcutDeger)}€**\n` +
-                `Eklenen: **+${formatDeger(eklenecekDeger)}€**\n` +
-                `Yeni Değer: **${yeniDegerYazisi}€**`
-            );
-
-        }
-
-    } catch (error) {
-
-        console.error(error);
-
-        return message.reply(
-            "❌ Takma ad değiştirilemedi. Botun **Takma Adları Yönet** yetkisini ve rol sırasını kontrol et."
-        );
-
-    }
-
-}
-
-// ==========================================
-// DEĞER OKUMA
-// ==========================================
-
-function parseDeger(deger) {
-
-    if (!deger) return NaN;
-
-    const temiz =
-        String(deger)
-            .toUpperCase()
-            .trim()
-            .replace(/€/g, "")
-            .replace(",", ".");
-
-    const match =
-        temiz.match(
-            /^(\d+(?:\.\d+)?)(K|M|B)$/
-        );
-
-    if (!match) return NaN;
-
-    const sayi =
-        Number(match[1]);
-
-    const birim =
-        match[2];
-
-    if (birim === "K")
-        return sayi * 1000;
-
-    if (birim === "M")
-        return sayi * 1000000;
-
-    if (birim === "B")
-        return sayi * 1000000000;
-
-    return NaN;
-
-}
-
-// ==========================================
-// BİRİM ÇEVİR
-// ==========================================
-
-function birimeCevir(
-    sayi,
-    birim
-) {
-
-    if (birim === "K")
-        return sayi * 1000;
-
-    if (birim === "M")
-        return sayi * 1000000;
-
-    if (birim === "B")
-        return sayi * 1000000000;
-
-    return sayi;
-
-}
-
-// ==========================================
-// FORMAT
-// ==========================================
-
-function formatDeger(sayi) {
-
-    if (sayi >= 1000000000) {
-
-        return temizle(
-            sayi / 1000000000
-        ) + "B";
-
-    }
-
-    if (sayi >= 1000000) {
-
-        return temizle(
-            sayi / 1000000
-        ) + "M";
-
-    }
-
-    if (sayi >= 1000) {
-
-        return temizle(
-            sayi / 1000
-        ) + "K";
-
-    }
-
-    return temizle(sayi);
-
-}
-
-// ==========================================
-// KÜSURAT TEMİZLE
-// ==========================================
-
-function temizle(sayi) {
-
-    return parseFloat(
-        Number(sayi).toFixed(2)
-    ).toString();
-
-}
-
-// ==========================================
+// =================================================
 // BOTU BAŞLAT
-// ==========================================
+// =================================================
 
-client.login(
-    process.env.DISCORD_TOKEN
-);
+client.login(TOKEN);
