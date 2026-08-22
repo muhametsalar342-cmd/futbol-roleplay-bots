@@ -18,7 +18,7 @@ const client = new Client({
 // AYARLAR
 // ==========================================
 
-const TOKEN = process.env.(TOKEN);
+const TOKEN = process.env.TOKEN;
 
 // BURAYA DEĞER YETKİLİSİ ROL ID'SİNİ YAZ
 const DEGER_YETKILISI_ROL_ID = "1540002147243139133";
@@ -685,4 +685,4 @@ client.on("messageCreate", async (message) => {
 // BOT TOKEN
 // ==========================================
 
-client.login(TOKEN);
+client.login.process.env.TOKEN;
