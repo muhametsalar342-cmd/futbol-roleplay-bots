@@ -18,13 +18,12 @@ const fs = require("fs");
 const PREFIX = ".";
 
 const ROLE = {
-    // VERDİĞİN ID'LER
     KAYIT_YETKILISI: "1540005508768079912",
     KAYITSIZ: "1540004657240211466",
 
-    // KENDİ ROL ID'LERİNİ BURAYA KOY
-    TEKNIK_DIREKTOR: "1539994147245527111",
-    FUTBOLCU: "1539994254917767349"
+    // BURAYA GERÇEK ROL ID'LERİNİ KOY
+    TEKNIK_DIREKTOR: "BURAYA_TEKNIK_DIREKTOR_ROL_ID",
+    FUTBOLCU: "BURAYA_FUTBOLCU_ROL_ID"
 };
 
 const CHANNEL = {
@@ -109,7 +108,7 @@ function getPlayer(id) {
     return data.players[id];
 }
 
-// Oyuncu değeri için
+// Oyuncu değer formatı
 // 1000000 -> 1M€
 // 6000000 -> 6M€
 // 1500000 -> 1.5M€
@@ -144,7 +143,7 @@ function formatValue(value) {
     return value + "€";
 }
 
-// Bütçe için
+// Bütçe formatı
 function money(value) {
 
     return Number(value || 0)
@@ -186,7 +185,6 @@ function parseMoney(text) {
     );
 }
 
-// dakika / saniye / saat
 function duration(text) {
 
     if (!text) return null;
@@ -275,7 +273,7 @@ const REAL_TEAMS = [
 ];
 
 // =====================================================
-// BOT HAZIR
+// READY
 // =====================================================
 
 client.once("ready", () => {
@@ -346,7 +344,7 @@ client.on(
 );
 
 // =====================================================
-// KOMUTLAR
+// MESAJ KOMUTLARI
 // =====================================================
 
 client.on(
@@ -357,9 +355,7 @@ client.on(
         if (!message.guild) return;
 
         if (
-            !message.content.startsWith(
-                PREFIX
-            )
+            !message.content.startsWith(PREFIX)
         ) return;
 
         const args =
@@ -391,7 +387,7 @@ client.on(
 
                         new EmbedBuilder()
                             .setTitle(
-                                "⚽ Legendary League"
+                                "⚽ Legendary League Bot"
                             )
                             .setColor(0x3498db)
                             .setDescription(
@@ -437,7 +433,7 @@ client.on(
                                 "`.ban @oyuncu`\n" +
                                 "`.mute @oyuncu 10 dakika`\n" +
                                 "`.unmute @oyuncu`\n" +
-                                "`.sil 10`\n" +
+                                "`.sil 1000`\n" +
                                 "`.kilit`\n" +
                                 "`.aç`\n\n" +
 
@@ -476,7 +472,7 @@ client.on(
                 if (!target) {
 
                     return message.reply(
-                        "❌ `.k @oyuncu İsim`"
+                        "❌ Kullanım: `.k @oyuncu İsim`"
                     );
                 }
 
@@ -607,7 +603,7 @@ client.on(
                 if (!amount) {
 
                     return message.reply(
-                        "❌ Geçerli değer gir.\n" +
+                        "❌ Geçerli bir değer gir.\n" +
                         "Örnek: `.dver @oyuncu 5M`"
                     );
                 }
@@ -615,10 +611,7 @@ client.on(
                 const p =
                     getPlayer(target.id);
 
-                // =========================================
-                // ASIL DÜZELTME
-                // =========================================
-
+                // MEVCUT DEĞERİN ÜZERİNE EKLE
                 p.value =
                     Number(p.value || 0) +
                     amount;
@@ -642,6 +635,7 @@ client.on(
                             parts.join("|").trim()
                         )
                         .catch(() => {});
+
                 } else {
 
                     await target
@@ -925,7 +919,7 @@ client.on(
                 if (!realTeam) {
 
                     return message.reply(
-                        "❌ Geçerli gerçek takım seç.\n\n" +
+                        "❌ Geçerli bir gerçek takım seç.\n\n" +
                         REAL_TEAMS.join(", ")
                     );
                 }
@@ -962,7 +956,8 @@ client.on(
                 return message.reply(
                     `🏟️ **${realTeam}** takımın oluşturuldu!\n` +
                     `👔 Teknik Direktör: ${member}\n` +
-                    `💰 Takım bütçesi: **100M€**`
+                    `💰 Takım bütçesi: **100M€**\n` +
+                    `🏷️ Takım rolü oluşturuldu.`
                 );
             }
 
@@ -1326,7 +1321,6 @@ client.on(
                 let minute = 0;
 
                 const events = [
-
                     "⚡ Hızlı hücum!",
                     "🎯 Şut çekildi!",
                     "🧤 Kaleci kurtardı!",
@@ -1499,9 +1493,7 @@ client.on(
 
                     return message.reply(
                         "❌ Örnek:\n" +
-                        "`.çekiliş 5M€ 5 saat`\n" +
-                        "`.çekiliş 500K€ 10 dakika`\n" +
-                        "`.çekiliş 100K€ 30 saniye`"
+                        "`.çekiliş 5M€ 5 saat`"
                     );
                 }
 
@@ -1806,7 +1798,7 @@ client.on(
             }
 
             // =================================================
-            // SİL
+            // SİL - 1000
             // =================================================
 
             if (command === "sil") {
@@ -1824,17 +1816,62 @@ client.on(
                 if (
                     !Number.isInteger(amount) ||
                     amount < 1 ||
-                    amount > 100
+                    amount > 1000
                 ) {
 
                     return message.reply(
-                        "❌ 1-100 arasında sayı yaz."
+                        "❌ 1 ile 1000 arasında bir sayı yaz.\n" +
+                        "Örnek: `.sil 500`"
                     );
                 }
 
-                await message.channel.bulkDelete(
-                    amount + 1,
-                    true
+                let remaining =
+                    amount;
+
+                let deletedTotal =
+                    0;
+
+                while (
+                    remaining > 0
+                ) {
+
+                    const batch =
+                        Math.min(
+                            remaining,
+                            100
+                        );
+
+                    const deleted =
+                        await message.channel
+                            .bulkDelete(
+                                batch,
+                                true
+                            );
+
+                    deletedTotal +=
+                        deleted.size;
+
+                    remaining -=
+                        deleted.size;
+
+                    if (
+                        deleted.size === 0 ||
+                        deleted.size < batch
+                    ) {
+                        break;
+                    }
+                }
+
+                const info =
+                    await message.channel.send(
+                        `🗑️ **${deletedTotal} mesaj silindi.**`
+                    );
+
+                setTimeout(
+                    () =>
+                        info.delete()
+                            .catch(() => {}),
+                    3000
                 );
 
                 return;
@@ -2331,7 +2368,7 @@ process.on(
 );
 
 // =====================================================
-// TOKEN - EN SONDA
+// LOGIN - EN SONDA
 // =====================================================
 
 if (!process.env.TOKEN) {
